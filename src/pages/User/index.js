@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { View } from 'react-native';
 import api from '../../services/api';
 
-import { Container, Header, Name, Avatar, Bio, Stars, Starred, OwnerAvatar, Info, Title, Author, Loading } from './styles';
+import { Container, Header, Name, Avatar, Bio, Stars, Starred, OwnerAvatar, Info, Title, Author, Loading, LoadingMoreIndicator } from './styles';
 
 export default class User extends Component {
   static navigationOptions = ({ navigation }) => ({
@@ -18,23 +18,64 @@ export default class User extends Component {
 
   state = {
     stars: [],
-    loading: false
+    refreshingList: false,
+    loadingFirstTime: true,
+    loadingMore: false,
+    page: 1
   }
 
   async componentDidMount() {
-    this.setState({ loading: true });
+    this.loadFirstPage();
+  }
 
+  getUser = () => {
     const { navigation } = this.props;
-    const user = navigation.getParam('user');
+    return navigation.getParam('user');
+  }
 
-    const response = await api.get(`/users/${user.login}/starred`);
+  load = page => {
+    const user = this.getUser();
+    return api.get(`/users/${user.login}/starred?page=${page}`);
+  }
 
-    this.setState({ stars: response.data, loading: false });
+  loadFirstPage = async () => {
+    this.setState({ page: 1 });
+
+    const response = await this.load(1);
+
+    this.setState({ stars: response.data, loadingFirstTime: false });
+  }
+
+  refreshList = async () => {
+    this.setState({ refreshinList: true, page: 1 });
+
+    const response = await this.load(1);
+
+    this.setState({ stars: response.data, refreshinList: false });
+  }
+
+  loadMore = async () => {
+    const { loadingMore } = this.state;
+
+    if (loadingMore) {
+      return;
+    }
+
+    this.setState({ loadingMore: true });
+
+    const { page } = this.state;
+    const newPage = page + 1;
+
+    console.tron.log(newPage);
+
+    const response = await this.load(newPage);
+
+    this.setState({ stars: [...this.state.stars, ...response.data], loadingMore: false, page: newPage });
   }
 
   render() {
     const { navigation } = this.props;
-    const { stars, loading } = this.state;
+    const { stars, refreshingList, loadingFirstTime, loadingMore } = this.state;
 
     const user = navigation.getParam('user');
 
@@ -46,22 +87,30 @@ export default class User extends Component {
           <Bio>{user.bio}</Bio>
         </Header>
 
-        {loading ? (
+        {loadingFirstTime ? (
           <Loading />
-        ) : (
-            <Stars
-              data={stars}
-              keyExtractor={star => String(star.id)}
-              renderItem={({ item }) => (
-                <Starred>
-                  <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
-                  <Info>
-                    <Title>{item.name}</Title>
-                    <Author>{item.owner.login}</Author>
-                  </Info>
-                </Starred>
-              )}
-            />
+        ) : (<>
+          <Stars
+            onRefresh={this.refreshList}
+            refreshing={refreshingList}
+            data={stars}
+            keyExtractor={star => String(star.id)}
+            onEndReachedThreshold={0.2}
+            onEndReached={this.loadMore}
+            renderItem={({ item }) => (
+              <Starred>
+                <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
+                <Info>
+                  <Title>{item.name}</Title>
+                  <Author>{item.owner.login}</Author>
+                </Info>
+              </Starred>
+            )}
+          />
+
+          {loadingMore && <Loading />}
+
+        </>
           )}
 
       </Container>
