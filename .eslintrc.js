@@ -26,7 +26,7 @@ module.exports = {
   rules: {
     'prettier/prettier': 'error',
 
-    'react/state-in-constructor': 'never',
+    'react/state-in-constructor': 0,
     'react/static-property-placement': 'warn',
     'react/jsx-props-no-spreading': [{
       'html': 'ignore' | 'enforce',
