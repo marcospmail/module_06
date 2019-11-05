@@ -51,8 +51,6 @@ export default class Main extends Component {
 
     this.setState({ loading: true });
 
-    console.tron.log(`/users/${newUser}`);
-
     const response = await api.get(`/users/${newUser}`);
 
     const data = {
@@ -72,7 +70,7 @@ export default class Main extends Component {
   }
 
   render() {
-    const { users, loading } = this.state;
+    const { users, loading, newUser } = this.state;
 
     return (
       <Container >
@@ -81,6 +79,7 @@ export default class Main extends Component {
             autoCorrect={false}
             autoCapitalize="none"
             placeholder="Adicionar usuário"
+            value={newUser}
             onChangeText={text => this.setState({ newUser: text })}
             returnKeyType="send"
             onSubmitEditing={this.handleAddUser}
