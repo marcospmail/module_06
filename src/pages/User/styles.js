@@ -47,9 +47,9 @@ export const Starred = styled(RectButton)`
   background: #f5f5f5;
   border-radius: 4px;
   padding: 10px 15px;
-  margin-bottom: 20px;
   flex-direction: row;
   align-items: center;
+  margin-bottom: ${props => props.lastItem ? 0 : 20};
 `;
 
 export const OwnerAvatar = styled.Image`
@@ -62,7 +62,6 @@ export const OwnerAvatar = styled.Image`
 export const Info = styled.View`
   margin-left: 10px;
   flex: 1;
-
 `;
 
 export const Title = styled.Text.attrs({
@@ -79,12 +78,16 @@ export const Author = styled.Text`
   margin-top: 2px;
 `;
 
-
 export const Loading = styled.ActivityIndicator.attrs({
-  size: 50,
   color: '#7159c1'
 })`
   flex: 1;
   align-items: center;
   justify-content: center;
+`;
+
+export const LoadingMore = styled.ActivityIndicator.attrs({
+  color: '#7159c1'
+})`
+  margin: 5px 0px;
 `;

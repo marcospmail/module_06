@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { View } from 'react-native';
 import api from '../../services/api';
 
-import { Container, Header, Name, Avatar, Bio, Stars, Starred, OwnerAvatar, Info, Title, Author, Loading, LoadingMoreIndicator } from './styles';
+import { Container, Header, Name, Avatar, Bio, Stars, Starred, OwnerAvatar, Info, Title, Author, LoadingMore, Loading } from './styles';
 
 export default class User extends Component {
   static navigationOptions = ({ navigation }) => ({
@@ -46,36 +45,35 @@ export default class User extends Component {
     this.setState({ stars: response.data, loadingFirstTime: false });
   }
 
-  refreshList = async () => {
-    this.setState({ refreshinList: true, page: 1 });
-
-    const response = await this.load(1);
-
-    this.setState({ stars: response.data, refreshinList: false });
-  }
-
   loadMore = async () => {
-    const { loadingMore } = this.state;
-
-    if (loadingMore) {
-      return;
-    }
-
     this.setState({ loadingMore: true });
 
     const { page } = this.state;
     const newPage = page + 1;
-
-    console.tron.log(newPage);
 
     const response = await this.load(newPage);
 
     this.setState({ stars: [...this.state.stars, ...response.data], loadingMore: false, page: newPage });
   }
 
+  refreshList = async () => {
+    this.setState({ refreshingList: true, page: 1 });
+
+    const response = await this.load(1);
+
+    this.setState({ stars: response.data, refreshingList: false });
+  }
+
   handleNavigate = repository => {
     const { navigation } = this.props;
     navigation.navigate('Repository', { repository });
+  }
+
+  onEndReached = async ({ distanceFromEnd }) => {
+    if (this.momentumScrolling) {
+      await this.loadMore();
+      this.momentumScrolling = false;
+    }
   }
 
   render() {
@@ -93,7 +91,7 @@ export default class User extends Component {
         </Header>
 
         {loadingFirstTime ? (
-          <Loading />
+          <Loading size={50} />
         ) : (<>
           <Stars
             onRefresh={this.refreshList}
@@ -101,20 +99,27 @@ export default class User extends Component {
             data={stars}
             keyExtractor={star => String(star.id)}
             onEndReachedThreshold={0.2}
-            onEndReached={this.loadMore}
-            renderItem={({ item }) => (
-              <Starred onPress={() => this.handleNavigate(item)}>
-                <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
-                <Info>
-                  <Title>{item.name}</Title>
-                  <Author>{item.owner.login}</Author>
-                </Info>
-              </Starred>
-            )}
+            onEndReached={!loadingMore && this.onEndReached}
+            onMomentumScrollBegin={() => { this.momentumScrolling = true }}
+            renderItem={({ item }) => {
+              const lastItem = item.id === stars[stars.length - 1].id;
+
+              return (
+                <>
+                  <Starred onPress={() => this.handleNavigate(item)} lastItem={lastItem} >
+                    <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
+                    <Info>
+                      <Title>{item.name}</Title>
+                      <Author>{item.owner.login}</Author>
+                    </Info>
+                  </Starred>
+
+                  {this.momentumScrolling && lastItem && <LoadingMore size={30} />}
+
+                </>
+              )
+            }}
           />
-
-          {loadingMore && <Loading />}
-
         </>
           )}
 
